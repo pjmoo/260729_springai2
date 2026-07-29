@@ -180,10 +180,42 @@ chatClient.prompt()
 
 ## 🚀 실행하기
 
-1. MySQL 데이터베이스를 기동하고 `schema-mysql.sql` 스크립트를 사용하여 `chat_message` 테이블을 생성합니다. (JPA의 `spring.jpa.hibernate.ddl-auto=create` 옵션 활성화 시 자동 생성됩니다.)
+1. MySQL 데이터베이스를 기동합니다. (JPA의 `spring.jpa.hibernate.ddl-auto=update` 옵션 활성화 시 테이블이 자동으로 생성됩니다.)
 2. 본인 디렉토리의 `.env.dev` 파일에 실제 Groq API Key 및 데이터베이스 커넥션 설정 정보를 기입합니다.
 3. Maven 빌드를 수행하여 애플리케이션을 가동시킵니다.
     ```bash
     mvn spring-boot:run
     ```
 4. 웹 브라우저에서 `http://localhost:8080/`에 접속하여 질문을 던져보고, 이전 대화 내용이 계속 기억되는지와 데이터베이스에 저장되는지 확인해 봅니다.
+
+---
+
+## 🛠️ 6단계. 문제 해결 가이드 (Troubleshooting)
+
+실습 과정에서 발생하기 쉬운 주요 에러 사례와 해결 방법입니다. 처음 공부하는 사람도 쉽게 이해할 수 있도록 용어 설명과 함께 구성했습니다.
+
+### 1. 데이터베이스 연결 실패 (`Unable to determine Dialect without JDBC metadata`)
+*   **에러 상황**: 애플리케이션 구동 시 DB 연결을 맺지 못하고 Hibernate Dialect 설정 관련 에러가 발생하며 서버가 켜지지 않음.
+*   **원인**: `.env.dev`에 작성된 DB 환경 변수명(`DB_Host`, `DB_Port` 등)이 `application-dev.properties`에서 플레이스홀더로 설정된 변수명(`${DB_HOST}`, `${DB_PORT}` 등)과 대소문자나 명칭이 일치하지 않아 값이 `null`로 주입되었기 때문입니다.
+*   **해결 방법**: 두 파일의 환경 변수 스펠링과 대소문자를 완전히 일치시켰습니다.
+    *   `DB_Host` ➔ `DB_HOST`
+    *   `DB_Port` ➔ `DB_PORT`
+    *   `DB_User` ➔ `DB_USERNAME`
+    *   `DB_Password` ➔ `DB_PASSWORD`
+*   **💡 초보자 가이드**: 스프링 부트 설정 파일에서 환경 변수를 임포트할 때는 **대소문자 한 글자까지 일치**해야 제대로 적용됩니다.
+
+### 2. 대화 기록 저장 시 500 에러 (`NonUniqueObjectException: A different object with the same identifier...`)
+*   **에러 상황**: 챗봇에게 메시지를 보냈을 때 `NonUniqueObjectException` 예외가 발생하며 페이지가 오류 화면으로 넘어감.
+*   **원인**: 이전 대화 내용을 초기화(Delete)하고 최신 윈도우 대화만 다시 저장(SaveAll)하는 과정에서, JPA의 '쓰기 지연(Write-Behind)' 기능 때문에 DB에는 아직 삭제 쿼리가 반영되지 않은 상태에서 동일한 ID를 가진 새 엔티티가 저장되려다 1차 캐시 충돌이 발생한 것입니다.
+*   **해결 방법**: [ChatMemoryJpaRepository.java](file:///C:/workspace/springai2/src/main/java/org/example/springai2/repository/ChatMemoryJpaRepository.java)의 `deleteAllByConversationId` 메서드에 `@Modifying(clearAutomatically = true, flushAutomatically = true)` 어노테이션을 추가하여, 벌크 삭제가 실행된 즉시 영속성 컨텍스트를 완전히 정리(clear)하고 DB에 즉시 반영(flush)되도록 강제했습니다.
+*   **💡 초보자 가이드**: JPA는 데이터베이스 변경 쿼리를 영속성 컨텍스트(1차 캐시)에 모아두었다가 한 번에 실행합니다. 동일 트랜잭션 내에서 데이터를 지우고 바로 다시 넣을 때는 **영속성 컨텍스트를 비워주는 작업(clear & flush)**이 필수적입니다.
+
+### 3. devtools 재기동 시 테이블 소실 (`Table 'memory.chat_message' doesn't exist`)
+*   **에러 상황**: 코드 수정 등으로 서버가 자동 재기동(devtools)될 때 데이터베이스 테이블이 갑자기 사라져 챗봇 이용 시 에러 발생.
+*   **원인**: `spring.jpa.hibernate.ddl-auto=create` 옵션은 서버가 재시작될 때마다 기존 테이블을 통째로 drop하고 새로 만드는데, devtools의 빠른 재시작 시점에 쿼리 실행 타이밍이 꼬이면서 drop만 되고 create가 정상적으로 완료되지 않았기 때문입니다.
+*   **해결 방법**: [application-dev.properties](file:///C:/workspace/springai2/src/main/resources/application-dev.properties)의 ddl-auto 옵션을 `update`로 변경했습니다.
+*   **💡 초보자 가이드**: 개발 중에는 매번 데이터를 날려버리는 `create` 대신, 테이블 구조 변경사항만 누적하여 적용하는 `update`를 사용하는 것이 동시성 및 데이터 보존 측면에서 훨씬 안전합니다.
+
+### 4. 저장 및 조회의 Repository 불일치
+*   **에러 상황**: AI 클라이언트에서는 JPA 방식을 쓰고 있는데, 대화 이력을 화면에 렌더링하는 `getHistory`는 MyBatis Repository를 조회하여 일관성이 깨짐.
+*   **해결 방법**: [ChatService2.java](file:///C:/workspace/springai2/src/main/java/org/example/springai2/service/ChatService2.java)의 의존성 주입 필드를 `JpaChatMemoryRepository`로 단일화하여 저장과 조회의 흐름을 하나로 정렬했습니다.

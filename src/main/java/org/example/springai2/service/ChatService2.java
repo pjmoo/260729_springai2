@@ -2,7 +2,7 @@ package org.example.springai2.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.springai2.dto.ChatDTO;
-import org.example.springai2.repository.MyBatisChatMemoryRepository;
+import org.example.springai2.repository.JpaChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -23,7 +23,7 @@ public class ChatService2 {
     private final ChatClient chatClient;
     //    @Qualifier("inMemoryChatMemory")
 //    private final ChatMemory chatMemory;
-    private final MyBatisChatMemoryRepository chatMemoryRepository;
+    private final JpaChatMemoryRepository chatMemoryRepository;
 
     public String chat(ChatDTO dto) {
         return chatClient.prompt().system("친절하게 50자 이내로 한글로 대답")
