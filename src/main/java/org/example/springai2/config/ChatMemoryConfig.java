@@ -1,5 +1,6 @@
 package org.example.springai2.config;
 
+import org.example.springai2.repository.JpaChatMemoryRepository;
 import org.example.springai2.repository.MyBatisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -52,6 +53,18 @@ public class ChatMemoryConfig {
     public ChatClient mybatisChatClient(
             ChatModel chatModel,
             @Qualifier("mybatisChatMemory") ChatMemory memory) {
+        return chatClientWith(chatModel, memory);
+    }
+
+    @Bean
+    public ChatMemory jpaChatMemory(JpaChatMemoryRepository repository) {
+        return messageWindow(repository);
+    }
+
+    @Bean
+    public ChatClient jpaChatClient(
+            ChatModel chatModel,
+            @Qualifier("jpaChatMemory") ChatMemory memory) {
         return chatClientWith(chatModel, memory);
     }
 }

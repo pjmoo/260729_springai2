@@ -18,7 +18,8 @@ import java.util.Map;
 public class ChatService2 {
 //    @Qualifier("inMemoryChatClient") // @RequiredArgsConstructor <- lombok.config
 
-    @Qualifier("mybatisChatClient")
+    //    @Qualifier("mybatisChatClient")
+    @Qualifier("jpaChatClient")
     private final ChatClient chatClient;
     //    @Qualifier("inMemoryChatMemory")
 //    private final ChatMemory chatMemory;
