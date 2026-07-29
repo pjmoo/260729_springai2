@@ -26,4 +26,13 @@ public class ChatMessageMyBatis {
             default -> throw new IllegalArgumentException("지원하지 않는 메시지 타입: %s".formatted(messageType));
         };
     }
+
+    public static ChatMessageMyBatis fromMessage(Message message, String conversationId, int seq) {
+        return ChatMessageMyBatis.builder()
+                .conversationId(conversationId)
+                .messageType(message.getMessageType().getValue())
+                .content(message.getText())
+                .seq(seq)
+                .build();
+    }
 }
