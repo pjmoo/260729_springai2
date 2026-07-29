@@ -1,5 +1,6 @@
 package org.example.springai2.service;
 
+import org.example.springai2.advisor.TimingLoggerAdvisor;
 import org.example.springai2.dto.ChatDTO;
 import org.example.springai2.dto.FoodDTO;
 import org.springframework.ai.chat.client.ChatClient;
@@ -86,7 +87,7 @@ public class ChatService {
     public String chat2(ChatDTO dto) {
         String template = "<메시지>{message}</메시지>와 관련된 {category}을 5종 추천해줘. 가능한 한글로.";
         return chatClient.prompt()
-                .advisors(new SimpleLoggerAdvisor())
+                .advisors(new SimpleLoggerAdvisor(), new TimingLoggerAdvisor())
                 .user(
                         u -> u.text(template)
                                 .param("message", dto.message())
