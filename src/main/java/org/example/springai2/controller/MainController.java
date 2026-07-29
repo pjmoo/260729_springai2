@@ -2,7 +2,6 @@ package org.example.springai2.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.springai2.dto.ChatDTO;
-import org.example.springai2.dto.FoodDTO;
 import org.example.springai2.service.ChatService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +32,8 @@ public class MainController {
 //                chatService.recommendFood2(dto),
 //                chatService.recommendFood3(dto)
 //        ));
-        FoodDTO result = chatService.manual(dto);
+//        FoodDTO result = chatService.manual(dto);
+        String result = chatService.chat2(dto);
         redirectAttributes.addFlashAttribute("result", result);
         return "redirect:/";
     }

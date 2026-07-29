@@ -3,6 +3,7 @@ package org.example.springai2.service;
 import org.example.springai2.dto.ChatDTO;
 import org.example.springai2.dto.FoodDTO;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.converter.ListOutputConverter;
@@ -24,6 +25,7 @@ public class ChatService {
 //        String persona = "상당히 예의없고 건방짐.";
         this.chatClient = ChatClient.builder(chatModel)
 //                .defaultSystem(s -> s.text(systemTemplate).param("persona", persona))
+//                .defaultAdvisors()
                 .build();
     }
 
@@ -79,5 +81,16 @@ public class ChatService {
                 .call().content();
         System.out.println("rawResult = " + rawResult);
         return converter.convert(rawResult);
+    }
+
+    public String chat2(ChatDTO dto) {
+        String template = "<메시지>{message}</메시지>와 관련된 {category}을 5종 추천해줘. 가능한 한글로.";
+        return chatClient.prompt()
+                .advisors(new SimpleLoggerAdvisor())
+                .user(
+                        u -> u.text(template)
+                                .param("message", dto.message())
+                                .param("category", "디지몬"))
+                .call().content();
     }
 }
