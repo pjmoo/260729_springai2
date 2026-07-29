@@ -4,6 +4,7 @@ import org.example.springai2.dto.ChatDTO;
 import org.example.springai2.dto.FoodDTO;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.converter.ListOutputConverter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -65,5 +66,18 @@ public class ChatService {
 //                .call().entity(new ParameterizedTypeReference<Map<String, Object>>() {});
                 .call().entity(new ParameterizedTypeReference<>() {
                 });
+    }
+
+    public FoodDTO manual(ChatDTO dto) {
+        BeanOutputConverter<FoodDTO> converter = new BeanOutputConverter<>(FoodDTO.class);
+        String formatInstruction = converter.getFormat();
+        System.out.println("formatInstruction = " + formatInstruction);
+        String rawResult = chatClient.prompt()
+                .user(u -> u.text("{message}에 관련된 음식을 추천해줘.\n${format}")
+                        .param("message", dto.message())
+                        .param("format", formatInstruction))
+                .call().content();
+        System.out.println("rawResult = " + rawResult);
+        return converter.convert(rawResult);
     }
 }
