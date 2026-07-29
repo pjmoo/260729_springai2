@@ -30,7 +30,7 @@ public class ChatMessageMyBatis {
     public static ChatMessageMyBatis fromMessage(Message message, String conversationId, int seq) {
         return ChatMessageMyBatis.builder()
                 .conversationId(conversationId)
-                .messageType(message.getMessageType().getValue())
+                .messageType(message.getMessageType().name())
                 .content(message.getText())
                 .seq(seq)
                 .build();
