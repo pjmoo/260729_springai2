@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.springai2.dto.ChatDTO;
 import org.example.springai2.service.ChatService2;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,11 +19,21 @@ public class MainController {
     private final ChatService2 chatService;
 
     @GetMapping
-    public String index() {
+    public String index(Model model, HttpSession session) {
+        model.addAttribute("history", chatService.getHistory(session.getId()));
         return "index";
     }
 
-//    @PostMapping
+    @PostMapping
+    public String chat2(ChatDTO dto,
+                        RedirectAttributes redirectAttributes,
+                        HttpSession session) {
+        String result = chatService.chat(dto.withID(session.getId()));
+        redirectAttributes.addFlashAttribute("result", result);
+        return "redirect:/";
+    }
+
+    //    @PostMapping
 //    public String chat(ChatDTO dto,
 //                       RedirectAttributes redirectAttributes) {
 //        String result = chatService.chat(dto);
@@ -40,13 +51,4 @@ public class MainController {
 //        redirectAttributes.addFlashAttribute("result", result);
 //        return "redirect:/";
 //    }
-
-    @PostMapping
-    public String chat2(ChatDTO dto,
-                        RedirectAttributes redirectAttributes,
-                        HttpSession session) {
-        String result = chatService.chat(dto.withID(session.getId()));
-        redirectAttributes.addFlashAttribute("result", result);
-        return "redirect:/";
-    }
 }

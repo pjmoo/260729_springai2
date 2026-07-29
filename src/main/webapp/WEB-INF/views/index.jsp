@@ -12,6 +12,9 @@
         <button>질문하기</button>
     </form>
 </section>
+<section>
+    ${history}
+</section>
 <c:if test="${not empty result}">
     <section>
         <p>답변 :</p>
